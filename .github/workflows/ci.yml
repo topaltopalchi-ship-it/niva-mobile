@@ -19,5 +19,5 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Type-check
-        run: npm run typecheck
+      - name: Type-check and unit tests
+        run: npm run ci
