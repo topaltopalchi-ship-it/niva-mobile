@@ -36,13 +36,15 @@ npx expo start
 
 Use the Expo CLI prompts to launch an Android emulator, iOS simulator, or a connected development device.
 
-## Type-check
+## Checks
 
 ```bash
 npm run typecheck
+npm test
+npm run ci
 ```
 
-GitHub Actions runs the same TypeScript check on pushes and pull requests to `main`.
+The Node.js built-in test runner covers message categorization suggestions, warning signals, and validation of restored local data. GitHub Actions runs the TypeScript check and these tests on pushes and pull requests to `main`.
 
 ## Roadmap
 
