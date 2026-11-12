@@ -30,11 +30,25 @@ const INITIAL_MESSAGES: Message[] = [
   { id: "3", sender: "Alex Rivera", initials: "AR", preview: "Sent you the photos from the weekend ✨", time: "Yesterday", category: "Personal", unread: false, important: false, blocked: false },
   { id: "4", sender: "Daily Offers", initials: "DO", preview: "Your exclusive deal expires tonight…", time: "Yesterday", category: "Promotions", unread: false, important: false, blocked: false },
   { id: "5", sender: "Studio Team", initials: "ST", preview: "The updated project files are in the folder.", time: "Mon", category: "Personal", unread: false, important: true, blocked: false },
+  { id: "6", sender: "Parcel Desk", initials: "PD", preview: "Your package is out for delivery today.", time: "Mon", category: "Personal", unread: true, important: false, blocked: false },
 ];
 
 type Filter = "All" | "Important" | "Blocked" | "Personal" | "Updates" | "Promotions";
 
 const STORAGE_KEY = "@niva/conversations/v1";
+
+function getCategorySuggestion(message: Message): { category: Message["category"]; reason: string } | null {
+  const text = (message.sender + " " + message.preview).toLowerCase();
+  const promotionSignals = ["unsubscribe", "discount", "deal", "offer", "sale", "coupon", "promo"];
+  const updateSignals = ["statement", "verification code", "one-time code", "package", "delivery", "tracking", "appointment", "receipt"];
+  if (promotionSignals.some((signal) => text.includes(signal)) && message.category !== "Promotions") {
+    return { category: "Promotions", reason: "Contains promotional wording such as an offer or discount." };
+  }
+  if (updateSignals.some((signal) => text.includes(signal)) && message.category !== "Updates") {
+    return { category: "Updates", reason: "Contains a transactional or service-update term." };
+  }
+  return null;
+}
 
 function isStoredMessages(value: unknown): value is Message[] {
   if (!Array.isArray(value)) return false;
@@ -117,6 +131,12 @@ export default function App() {
     setSelectedId(id);
   };
 
+  const applyCategorySuggestion = (id: string, category: Message["category"]) => {
+    setMessages((current) => current.map((message) =>
+      message.id === id ? { ...message, category } : message
+    ));
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" />
@@ -136,6 +156,22 @@ export default function App() {
               <Text style={styles.detailBody}>{selectedMessage.preview}</Text>
               <Text style={styles.detailDisclaimer}>This is sample conversation content. Niva is not connected to your device messages yet.</Text>
             </View>
+            {(() => {
+              const suggestion = getCategorySuggestion(selectedMessage);
+              return suggestion ? (
+                <View style={styles.suggestionCard}>
+                  <Text style={styles.suggestionTitle}>NIVA SUGGESTS · {suggestion.category.toUpperCase()}</Text>
+                  <Text style={styles.suggestionReason}>{suggestion.reason}</Text>
+                  <Pressable
+                    onPress={() => applyCategorySuggestion(selectedMessage.id, suggestion.category)}
+                    style={styles.suggestionButton}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.suggestionButtonText}>Apply category</Text>
+                  </Pressable>
+                </View>
+              ) : null;
+            })()}
             <View style={styles.detailActions}>
               <Pressable onPress={() => toggleImportant(selectedMessage.id)} style={styles.detailAction}>
                 <Text style={styles.detailActionText}>{selectedMessage.important ? "★  Important" : "☆  Mark important"}</Text>
@@ -246,6 +282,11 @@ const styles = StyleSheet.create({
   detailLabel: { color: "#879188", fontSize: 9, fontWeight: "800", letterSpacing: 1.4, marginBottom: 14 },
   detailBody: { color: "#344337", fontSize: 16, lineHeight: 25 },
   detailDisclaimer: { color: "#9AA49A", fontSize: 10, lineHeight: 15, marginTop: 22 },
+  suggestionCard: { marginTop: 14, padding: 16, borderRadius: 15, backgroundColor: "#EEF2EB", borderWidth: 1, borderColor: "#DDE7D8" },
+  suggestionTitle: { color: "#587452", fontSize: 9, fontWeight: "800", letterSpacing: 1 },
+  suggestionReason: { color: "#6D786E", fontSize: 11, lineHeight: 16, marginTop: 7 },
+  suggestionButton: { alignSelf: "flex-start", marginTop: 12, paddingHorizontal: 13, paddingVertical: 8, borderRadius: 10, backgroundColor: "#DCE8D8" },
+  suggestionButtonText: { color: "#496544", fontSize: 11, fontWeight: "800" },
   detailActions: { marginTop: 16, gap: 10 },
   detailAction: { backgroundColor: "#EAEFE8", borderRadius: 13, padding: 15 },
   detailActionText: { color: "#526B50", fontSize: 12, fontWeight: "700" },
