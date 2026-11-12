@@ -71,3 +71,8 @@ Conversation state is stored on the device using AsyncStorage. This is persisten
 ## Potential warning signs
 
 The message detail view can show a caution card when local keyword rules find signals such as urgency, requests for passwords or financial details, links, or prize language. It explains which signals were matched and recommends independent verification. This is deliberately not presented as a fraud verdict: keyword checks can miss scams and can flag legitimate messages. No content is sent to a server and no message is automatically blocked or deleted. The seeded warning example uses the reserved `example.invalid` domain and is demonstration content only.
+
+
+## User feedback on warning hints
+
+On a flagged conversation, users can mark the warning as suspicious or as a possible false alarm. This choice is stored alongside that conversation in local AsyncStorage and can be undone. It is private device-side feedback only: it is not sent to Niva or used to train a model, and it does not change the keyword rules or automatically block a sender.
