@@ -10,10 +10,12 @@ The repository started as a README-only project. The first application foundatio
 
 - Inbox screen with seeded sample conversations
 - Search by sender or message preview
-- All, Important, and Blocked filters
+- All, Important, Blocked, Personal, Updates, and Promotions filters
 - Open a conversation detail screen and return to the inbox
 - Mark a conversation as read when opening it
 - Persist read, important, and blocked states locally with AsyncStorage
+- Validate restored local data before loading it into the app
+- Horizontal category filters for a compact inbox layout
 - Privacy-first visual direction
 
 > **Prototype notice:** The current inbox uses local sample data only. It does not yet read SMS, notifications, email, or contacts from a device, and block actions do not block senders at the operating-system or carrier level.
@@ -38,6 +40,8 @@ Use the Expo CLI prompts to launch an Android emulator, iOS simulator, or a conn
 ```bash
 npm run typecheck
 ```
+
+GitHub Actions runs the same TypeScript check on pushes and pull requests to `main`.
 
 ## Roadmap
 
