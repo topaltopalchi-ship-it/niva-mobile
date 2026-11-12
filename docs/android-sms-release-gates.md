@@ -49,3 +49,6 @@ Never show a success state until Android confirms the role and the native module
 ## Release gate
 
 The current bridge is scaffolding only. Do not request SMS permissions or advertise real SMS support until the native implementation, device tests, privacy review, and Play policy review are complete.
+## Bridge safety tests
+
+The JavaScript boundary normalizes native responses through `src/native/sms/smsCapability.js`. Unit tests in `tests/smsCapability.test.js` verify that malformed or unknown native payloads fail closed, capability flags must be literal booleans, and read/import permission is independent from compose/send permission. These tests do not replace Android emulator tests of the native role and SMS provider flows.
