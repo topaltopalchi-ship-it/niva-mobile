@@ -335,7 +335,7 @@ export default function App() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filters}>
           {(["All", "Important", "Blocked", "Personal", "Updates", "Promotions"] as Filter[]).map((item) => (
-            <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, filter === item && styles.filterActive]}>
+            <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, filter === item && styles.filterActive]} accessibilityRole="button" accessibilityState={{ selected: filter === item }} accessibilityLabel={`${item} filter`}>
               <Text style={[styles.filterText, filter === item && styles.filterTextActive]}>{item}</Text>
               {item === "Blocked" && <Text style={[styles.filterCount, filter === item && styles.filterTextActive]}>{messages.filter((m) => m.blocked).length}</Text>}
             </Pressable>
