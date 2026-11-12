@@ -41,6 +41,13 @@ export function createSecureMessageStore(platform, nativeStore) {
       requireNonEmptyString(id, "id");
       return requireStore("getDecryptedMessage").getDecryptedMessage(id);
     },
+    async getMessages() {
+      const result = await requireStore("getAllDecryptedMessages").getAllDecryptedMessages();
+      if (!Array.isArray(result)) {
+        throw new TypeError("Native message store returned an invalid message list");
+      }
+      return result;
+    },
     async deleteMessage(id) {
       requireNonEmptyString(id, "id");
       return requireStore("deleteMessage").deleteMessage(id);
