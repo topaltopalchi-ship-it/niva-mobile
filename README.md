@@ -34,7 +34,7 @@ npm install
 npx expo start
 ```
 
-Use the Expo CLI prompts to launch an Android emulator, iOS simulator, or a connected development device.
+The first release targets Android only. Use an Android emulator or a connected Android device.
 
 ## Checks
 
@@ -48,14 +48,14 @@ The Node.js built-in test runner covers message categorization suggestions, warn
 
 ## Android SMS integration
 
-The Android implementation must first qualify as a complete default SMS handler. Google Play restricts SMS permissions, and apps generally must be the active default SMS handler before requesting them. See [the implementation decision and staged plan](docs/android-sms-integration.md). No SMS access is implemented in the current prototype.
+The first release is Android-only and is intended to become a complete default SMS handler. Google Play restricts SMS permissions, and apps generally must qualify as a complete default SMS handler before requesting them. See [the implementation decision and staged plan](docs/android-sms-integration.md) and [release gates](docs/android-sms-release-gates.md). **Real SMS access, import, send/receive, and OS-level blocking are not implemented yet.**
 
 ## Roadmap
 
-1. Product requirements and threat model
-2. Platform-specific message access and genuine OS-level blocking
-3. Backend/authentication only where needed; keep message content on-device by default
-4. Privacy controls, tests, accessibility, and release automation
+1. Complete and device-test the encrypted local message store
+2. Implement all Android default-SMS role components and provider synchronization
+3. Add incoming/outgoing SMS flows, consent, and genuine OS-level blocking
+4. Complete privacy controls, accessibility, Play policy review, and release automation
 
 ## Message categorization
 
@@ -63,7 +63,7 @@ The prototype includes a small, transparent keyword-based suggestion helper for 
 
 ## Local data storage
 
-Conversation state is stored on the device using AsyncStorage. This is persistent but **not encrypted**; do not store sensitive message contents in this prototype. A future production version should evaluate encrypted storage and a clear data export/delete flow.
+The existing prototype inbox preferences and sample conversation state still use AsyncStorage, which is **not encrypted** and must not contain real SMS content. A separate Android native module now provides an initial AES-256-GCM encrypted message-store implementation backed by an Android Keystore key. Its integration and on-device behavior remain unverified; do not treat it as production-ready or store real SMS until the remaining milestones and tests are complete.
 
 ## Privacy principles
 
@@ -86,8 +86,21 @@ On a flagged conversation, users can mark the warning as suspicious or as a poss
 
 ## Privacy & data controls
 
-The app includes a local Privacy & Data screen that describes the prototype\’s storage behavior and integration limits, shows the current conversation count, and supports JSON export through the native share sheet. Users can reset the inbox to sample conversations or permanently delete Niva’s locally stored conversations and preferences after a confirmation prompt. A deletion marker prevents sample data from being silently restored on the next launch. These controls affect only Niva’s prototype data; they cannot delete SMS, email, or data held by other apps. AsyncStorage is not encrypted. Exported JSON may contain message content, so choose a trusted share destination.
+The app includes a local Privacy & Data screen that describes the prototype’s storage behavior and integration limits, shows the current conversation count, and supports JSON export through the native share sheet. Users can reset the inbox to sample conversations or permanently delete Niva’s locally stored conversations and preferences after a confirmation prompt. A deletion marker prevents sample data from being silently restored on the next launch. These controls affect only Niva’s prototype data; they cannot delete SMS, email, or data held by other apps. AsyncStorage is not encrypted. Exported JSON may contain message content, so choose a trusted share destination.
 
 ## Android SMS bridge status
 
 A fail-closed TypeScript boundary now lives at `src/native/sms/SmsBridge.ts`. It reports unsupported platforms or a missing native module and never treats bridge errors as permission. This is scaffolding only: there is still no Android native SMS implementation, no SMS permission request, and no real-message import. See [Android SMS release gates](docs/android-sms-release-gates.md) before implementing or advertising device SMS support.
+
+
+## Encrypted Android message-store milestone
+
+A local Expo Android module now exists at `modules/niva-secure-messages`. It stores message records in an AES-256-GCM encrypted file and keeps the encryption key in Android Keystore. The JavaScript API at `src/storage/secureMessageStore.js` fails closed when the native module is missing; it has no AsyncStorage or plaintext fallback.
+
+This is an initial native storage implementation, not a completed SMS product. The module has not yet been compiled or exercised on an Android device in this repository workflow. The default-SMS role, complete SMS/MMS manifest components, provider synchronization, incoming/outgoing message flows, and Play policy review are still outstanding. Do not use the prototype AsyncStorage conversation store for real SMS content.
+
+## Android build and signing
+
+The current GitHub Actions Android workflow builds a **debug APK** with Gradle `assembleDebug`. It does not require a user-created release keystore: Android Gradle Plugin uses its development debug signing configuration for this build.
+
+Release signing is intentionally not configured yet. Before producing a Play Store or distribution build, create a dedicated upload/release keystore locally and store its credentials only as protected GitHub Actions secrets (or use an approved signing service). Never commit keystore files, passwords, private keys, or signing properties to this repository. The release workflow must remain separate from the debug workflow and should only be enabled after the signing setup and recovery/backup process are documented.

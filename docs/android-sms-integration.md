@@ -2,7 +2,7 @@
 
 ## Status
 
-Planning only. The current app remains a sample-data prototype. No SMS permissions, SMS receiver, message-provider access, or native SMS module are implemented by this document.
+The product direction is confirmed: Android-only first release, complete default-SMS-handler behavior, and local-only message content. The app remains a sample-data prototype. A separate encrypted-storage proof of concept exists, but no SMS permissions, SMS receiver, message-provider access, or native SMS module are implemented yet.
 
 ## Product decision required
 
@@ -12,12 +12,12 @@ On Google Play, SMS permissions such as READ_SMS, RECEIVE_SMS, SEND_SMS, WRITE_S
 
 ## Proposed implementation sequence
 
-1. Confirm the product will support Android only for the first real-message release and that users may optionally make Niva their default SMS app.
-2. Implement and test the complete default-SMS-handler capability, including the required intent filters and Android role request flow (RoleManager.ROLE_SMS on Android 10+).
-3. Add a native Android module for SMS provider access and delivery, with runtime role/permission checks. Keep this behind a typed React Native boundary.
-4. Import messages only after the user explicitly opts in and Niva is the active default SMS handler. Provide clear empty, denied, and role-revoked states.
+1. Complete and compile the existing Android Keystore-backed encrypted-store proof of concept; replace the single-file JSON design with a reviewed encrypted database before real-message import.
+2. Implement and test the complete default-SMS-handler capability, including required intent filters and the Android role request flow (RoleManager.ROLE_SMS on Android 10+).
+3. Add the native Android SMS provider and delivery implementation with runtime role/permission checks behind a typed React Native boundary.
+4. Import messages only after the user explicitly opts in and Niva is the active default SMS handler. Provide clear empty, denied, progress, cancellation, and role-revoked states.
 5. Keep classification on-device. Never upload SMS content for analytics, training, or advertising.
-6. Use encrypted local storage for message content; AsyncStorage is not suitable for sensitive SMS bodies.
+6. Keep real message content out of AsyncStorage; use only the reviewed encrypted local database for SMS bodies and sender addresses.
 7. Add emulator/device integration tests for incoming SMS, outgoing SMS, multipart messages, role changes, and permission revocation.
 8. Complete Google Play's SMS permission declaration and privacy disclosures before release.
 
