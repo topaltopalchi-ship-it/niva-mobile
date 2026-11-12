@@ -31,6 +31,7 @@ const INITIAL_MESSAGES: Message[] = [
   { id: "4", sender: "Daily Offers", initials: "DO", preview: "Your exclusive deal expires tonight…", time: "Yesterday", category: "Promotions", unread: false, important: false, blocked: false },
   { id: "5", sender: "Studio Team", initials: "ST", preview: "The updated project files are in the folder.", time: "Mon", category: "Personal", unread: false, important: true, blocked: false },
   { id: "6", sender: "Parcel Desk", initials: "PD", preview: "Your package is out for delivery today.", time: "Mon", category: "Personal", unread: true, important: false, blocked: false },
+  { id: "7", sender: "Unknown Sender", initials: "US", preview: "FINAL WARNING: Your account is suspended. Verify your password immediately at http://example.invalid", time: "Today", category: "Updates", unread: true, important: false, blocked: false },
 ];
 
 type Filter = "All" | "Important" | "Blocked" | "Personal" | "Updates" | "Promotions";
@@ -48,6 +49,24 @@ function getCategorySuggestion(message: Message): { category: Message["category"
     return { category: "Updates", reason: "Contains a transactional or service-update term." };
   }
   return null;
+}
+
+function getRiskHint(message: Message): string[] {
+  const text = (message.sender + " " + message.preview).toLowerCase();
+  const reasons: string[] = [];
+  if (["act now", "immediately", "within 24 hours", "account suspended", "final warning"].some((signal) => text.includes(signal))) {
+    reasons.push("Uses urgent or threatening language to pressure a quick response.");
+  }
+  if (["password", "pin", "one-time code", "verification code", "bank details", "payment details"].some((signal) => text.includes(signal))) {
+    reasons.push("Mentions sensitive credentials or financial information.");
+  }
+  if (/https?:\/\//i.test(text) || /\b(bit\.ly|tinyurl\.com|t\.co)\b/i.test(text)) {
+    reasons.push("Contains a web link; check the destination independently before opening it.");
+  }
+  if (["you won", "claim your prize", "free gift"].some((signal) => text.includes(signal))) {
+    reasons.push("Uses prize or free-gift language that can be used in deceptive messages.");
+  }
+  return reasons;
 }
 
 function isStoredMessages(value: unknown): value is Message[] {
@@ -156,6 +175,18 @@ export default function App() {
               <Text style={styles.detailBody}>{selectedMessage.preview}</Text>
               <Text style={styles.detailDisclaimer}>This is sample conversation content. Niva is not connected to your device messages yet.</Text>
             </View>
+            {(() => {
+              const riskReasons = getRiskHint(selectedMessage);
+              return riskReasons.length > 0 ? (
+                <View style={styles.riskCard}>
+                  <Text style={styles.riskTitle}>REVIEW CAREFULLY · POTENTIAL WARNING SIGNS</Text>
+                  {riskReasons.map((reason) => (
+                    <Text key={reason} style={styles.riskReason}>• {reason}</Text>
+                  ))}
+                  <Text style={styles.riskDisclaimer}>This is a local keyword check, not a fraud verdict. Don’t share passwords or codes, and verify through an official channel you find yourself.</Text>
+                </View>
+              ) : null;
+            })()}
             {(() => {
               const suggestion = getCategorySuggestion(selectedMessage);
               return suggestion ? (
@@ -282,6 +313,10 @@ const styles = StyleSheet.create({
   detailLabel: { color: "#879188", fontSize: 9, fontWeight: "800", letterSpacing: 1.4, marginBottom: 14 },
   detailBody: { color: "#344337", fontSize: 16, lineHeight: 25 },
   detailDisclaimer: { color: "#9AA49A", fontSize: 10, lineHeight: 15, marginTop: 22 },
+  riskCard: { marginTop: 14, padding: 16, borderRadius: 15, backgroundColor: "#FFF6E9", borderWidth: 1, borderColor: "#EED9B8" },
+  riskTitle: { color: "#94652B", fontSize: 9, fontWeight: "800", letterSpacing: 1 },
+  riskReason: { color: "#765B3A", fontSize: 11, lineHeight: 17, marginTop: 8 },
+  riskDisclaimer: { color: "#967F63", fontSize: 10, lineHeight: 15, marginTop: 10 },
   suggestionCard: { marginTop: 14, padding: 16, borderRadius: 15, backgroundColor: "#EEF2EB", borderWidth: 1, borderColor: "#DDE7D8" },
   suggestionTitle: { color: "#587452", fontSize: 9, fontWeight: "800", letterSpacing: 1 },
   suggestionReason: { color: "#6D786E", fontSize: 11, lineHeight: 16, marginTop: 7 },
