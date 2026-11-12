@@ -63,3 +63,21 @@ test("message listing rejects malformed native results", async () => {
   });
   await assert.rejects(store.getMessages(), TypeError);
 });
+
+
+test("reads and lists reject malformed decrypted records", async () => {
+  const malformed = { id: "m-2", address: "+10000000000", body: "text", date: "not-a-timestamp" };
+  const store = createSecureMessageStore("android", {
+    getDecryptedMessage: async () => malformed,
+    getAllDecryptedMessages: async () => [sample, malformed],
+  });
+  await assert.rejects(store.getMessage("m-2"), TypeError);
+  await assert.rejects(store.getMessages(), TypeError);
+});
+
+test("a missing message is returned as null", async () => {
+  const store = createSecureMessageStore("android", {
+    getDecryptedMessage: async () => null,
+  });
+  assert.equal(await store.getMessage("missing"), null);
+});
