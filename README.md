@@ -11,8 +11,9 @@ The repository started as a README-only project. The first application foundatio
 - Inbox screen with seeded sample conversations
 - Search by sender or message preview
 - All, Important, and Blocked filters
-- Mark a conversation as read by opening its row
-- Toggle important and blocked states in the local demo state
+- Open a conversation detail screen and return to the inbox
+- Mark a conversation as read when opening it
+- Persist read, important, and blocked states locally with AsyncStorage
 - Privacy-first visual direction
 
 > **Prototype notice:** The current inbox uses local sample data only. It does not yet read SMS, notifications, email, or contacts from a device, and block actions do not block senders at the operating-system or carrier level.
@@ -41,10 +42,13 @@ npm run typecheck
 ## Roadmap
 
 1. Product requirements and threat model
-2. Navigation, conversation detail, and persistent local storage
-3. Platform capability assessment for SMS, notifications, and call/message blocking
-4. Backend/authentication only where needed; keep message content on-device by default
-5. Privacy controls, tests, accessibility, and release automation
+2. Platform-specific message access and genuine OS-level blocking
+3. Backend/authentication only where needed; keep message content on-device by default
+4. Privacy controls, tests, accessibility, and release automation
+
+## Local data storage
+
+Conversation state is stored on the device using AsyncStorage. This is persistent but **not encrypted**; do not store sensitive message contents in this prototype. A future production version should evaluate encrypted storage and a clear data export/delete flow.
 
 ## Privacy principles
 
