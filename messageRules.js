@@ -28,7 +28,7 @@ function getRiskHint(message) {
   if (SENSITIVE_SIGNALS.some((signal) => text.includes(signal))) {
     reasons.push("Mentions sensitive credentials or financial information.");
   }
-  if (/https?:\\/\\//i.test(text) || /\\b(bit\\.ly|tinyurl\\.com|t\\.co)\\b/i.test(text)) {
+  if (/https?:\/\//i.test(text) || /\b(bit\.ly|tinyurl\.com|t\.co)\b/i.test(text)) {
     reasons.push("Contains a web link; check the destination independently before opening it.");
   }
   if (PRIZE_SIGNALS.some((signal) => text.includes(signal))) {
