@@ -69,6 +69,26 @@ class NivaSecureMessagesModule : Module() {
       }
     }
 
+    AsyncFunction("getAllDecryptedMessages") {
+      synchronized(lock) {
+        val database = readDatabase()
+        val messages = mutableListOf<Map<String, Any>>()
+        val keys = database.keys()
+        while (keys.hasNext()) {
+          val record = database.getJSONObject(keys.next())
+          messages.add(
+            mapOf(
+              "id" to record.getString("id"),
+              "address" to record.getString("address"),
+              "body" to record.getString("body"),
+              "date" to record.getLong("date")
+            )
+          )
+        }
+        messages.sortedByDescending { it["date"] as Long }
+      }
+    }
+
     AsyncFunction("deleteMessage") { id: String ->
       synchronized(lock) {
         require(id.isNotBlank()) { "id is required" }
