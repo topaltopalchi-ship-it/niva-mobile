@@ -98,3 +98,9 @@ A fail-closed TypeScript boundary now lives at `src/native/sms/SmsBridge.ts`. It
 A local Expo Android module now exists at `modules/niva-secure-messages`. It stores message records in an AES-256-GCM encrypted file and keeps the encryption key in Android Keystore. The JavaScript API at `src/storage/secureMessageStore.js` fails closed when the native module is missing; it has no AsyncStorage or plaintext fallback.
 
 This is an initial native storage implementation, not a completed SMS product. The module has not yet been compiled or exercised on an Android device in this repository workflow. The default-SMS role, complete SMS/MMS manifest components, provider synchronization, incoming/outgoing message flows, and Play policy review are still outstanding. Do not use the prototype AsyncStorage conversation store for real SMS content.
+
+## Android build and signing
+
+The current GitHub Actions Android workflow builds a **debug APK** with Gradle `assembleDebug`. It does not require a user-created release keystore: Android Gradle Plugin uses its development debug signing configuration for this build.
+
+Release signing is intentionally not configured yet. Before producing a Play Store or distribution build, create a dedicated upload/release keystore locally and store its credentials only as protected GitHub Actions secrets (or use an approved signing service). Never commit keystore files, passwords, private keys, or signing properties to this repository. The release workflow must remain separate from the debug workflow and should only be enabled after the signing setup and recovery/backup process are documented.
