@@ -10,6 +10,8 @@ import {
   View,
   FlatList,
   ScrollView,
+  Alert,
+  Share,
 } from "react-native";
 
 type Message = {
@@ -38,6 +40,7 @@ const INITIAL_MESSAGES: Message[] = [
 type Filter = "All" | "Important" | "Blocked" | "Personal" | "Updates" | "Promotions";
 
 const STORAGE_KEY = "@niva/conversations/v1";
+const DELETED_KEY = "@niva/data-deleted/v1";
 
 function getCategorySuggestion(message: Message): { category: Message["category"]; reason: string } | null {
   const text = (message.sender + " " + message.preview).toLowerCase();
@@ -96,12 +99,18 @@ export default function App() {
   const [storageReady, setStorageReady] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [resetNotice, setResetNotice] = useState("");
+  const [dataDeleted, setDataDeleted] = useState(false);
 
   useEffect(() => {
     let active = true;
     const restore = async () => {
       try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        const deleted = await AsyncStorage.getItem(DELETED_KEY);
+        if (deleted === "true" && active) {
+          setMessages([]);
+          setDataDeleted(true);
+        }
+        const saved = deleted === "true" ? null : await AsyncStorage.getItem(STORAGE_KEY);
         if (saved && active) {
           const parsed: unknown = JSON.parse(saved);
           if (isStoredMessages(parsed)) setMessages(parsed);
@@ -117,11 +126,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!storageReady) return;
+    if (!storageReady || dataDeleted) return;
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(messages)).catch(() => {
       // The app remains usable if device storage is temporarily unavailable.
     });
-  }, [messages, storageReady]);
+  }, [messages, storageReady, dataDeleted]);
 
   const selectedMessage = messages.find((message) => message.id === selectedId) ?? null;
 
@@ -246,7 +255,6 @@ export default function App() {
             </View>
           </View>
         ) : privacyOpen ? (
-        ) : privacyOpen ? (
           <View style={styles.privacyScreen}>
             <Pressable onPress={() => { setPrivacyOpen(false); setResetNotice(""); }} style={styles.backButton} accessibilityRole="button">
               <Text style={styles.backText}>‹  Back to inbox</Text>
@@ -280,12 +288,28 @@ export default function App() {
               <Text style={styles.privacyBody}>AsyncStorage is persistent but not encrypted by this app. Do not use this prototype for sensitive or confidential message content.</Text>
             </View>
 
+            <View style={styles.privacyCard}>
+              <Text style={styles.privacyCardTitle}>EXPORT YOUR DATA</Text>
+              <Text style={styles.privacyBody}>Create a JSON export of the conversations and Niva preferences currently stored in this app. The native share sheet lets you choose where to send or save it.</Text>
+              <Pressable
+                onPress={() => {
+                  const payload = JSON.stringify({ exportedAt: new Date().toISOString(), app: "Niva", conversations: messages }, null, 2);
+                  Share.share({ title: "Niva data export", message: payload }).catch(() => setResetNotice("Could not open the share sheet. Please try again."));
+                }}
+                style={styles.exportButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.exportButtonText}>Export conversations (JSON)</Text>
+              </Pressable>
+            </View>
+
             <View style={styles.privacyDangerCard}>
               <Text style={styles.privacyDangerTitle}>RESET LOCAL INBOX</Text>
               <Text style={styles.privacyBody}>Remove saved inbox changes and restore the original sample conversations. This does not affect messages on your phone or any external account.</Text>
               <Pressable
                 onPress={() => {
-                  AsyncStorage.removeItem(STORAGE_KEY).then(() => {
+                  AsyncStorage.multiRemove([STORAGE_KEY, DELETED_KEY]).then(() => {
+                    setDataDeleted(false);
                     setMessages(INITIAL_MESSAGES);
                     setSelectedId(null);
                     setFilter("All");
@@ -299,6 +323,37 @@ export default function App() {
                 <Text style={styles.resetButtonText}>Reset to sample inbox</Text>
               </Pressable>
               {resetNotice ? <Text style={styles.resetNotice}>{resetNotice}</Text> : null}
+            </View>
+
+            <View style={styles.privacyDangerCard}>
+              <Text style={styles.privacyDangerTitle}>DELETE ALL LOCAL DATA</Text>
+              <Text style={styles.privacyBody}>Permanently clear Niva conversations and preferences saved by this prototype. The app will remain empty after reopening. This cannot delete SMS, email, or data in other apps.</Text>
+              <Pressable
+                onPress={() => Alert.alert(
+                  "Delete all local Niva data?",
+                  "This permanently removes the conversations and preferences stored by Niva on this device. This action cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Delete data", style: "destructive", onPress: () => {
+                      setDataDeleted(true);
+                      AsyncStorage.setItem(DELETED_KEY, "true")
+                        .then(() => AsyncStorage.removeItem(STORAGE_KEY))
+                        .then(() => {
+                          setMessages([]);
+                          setSelectedId(null);
+                          setFilter("All");
+                          setQuery("");
+                          setResetNotice("All Niva data stored by this prototype has been deleted from local storage.");
+                        })
+                        .catch(() => setResetNotice("Could not fully delete local data. Please try again."));
+                    } },
+                  ]
+                )}
+                style={styles.deleteButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.deleteButtonText}>Delete all local data</Text>
+              </Pressable>
             </View>
           </View>
         ) : (
@@ -408,6 +463,10 @@ const styles = StyleSheet.create({
   privacyBullet: { color: "#59675C", fontSize: 10, lineHeight: 16 },
   privacyDangerCard: { backgroundColor: "#FFF7F1", borderRadius: 16, borderWidth: 1, borderColor: "#F0DFD2", padding: 16, gap: 9 },
   privacyDangerTitle: { color: "#9B6449", fontSize: 9, fontWeight: "800", letterSpacing: 1.2 },
+  exportButton: { alignSelf: "flex-start", backgroundColor: "#E8EFE5", borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 3 },
+  exportButtonText: { color: "#526B50", fontSize: 10, fontWeight: "800" },
+  deleteButton: { alignSelf: "flex-start", backgroundColor: "#F0DFD2", borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 3 },
+  deleteButtonText: { color: "#88563D", fontSize: 10, fontWeight: "800" },
   resetButton: { alignSelf: "flex-start", backgroundColor: "#F0DFD2", borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 3 },
   resetButtonText: { color: "#88563D", fontSize: 10, fontWeight: "800" },
   resetNotice: { color: "#587452", fontSize: 10, lineHeight: 15 },
