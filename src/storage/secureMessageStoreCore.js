@@ -14,6 +14,19 @@ function requireNonEmptyString(value, field) {
   }
 }
 
+function validateStoredMessage(message) {
+  if (!message || typeof message !== "object" || Array.isArray(message)) {
+    throw new TypeError("Native message store returned an invalid message");
+  }
+  requireNonEmptyString(message.id, "message.id");
+  requireNonEmptyString(message.address, "message.address");
+  requireNonEmptyString(message.body, "message.body");
+  if (typeof message.date !== "number" || !Number.isFinite(message.date)) {
+    throw new TypeError("message.date must be a finite number");
+  }
+  return message;
+}
+
 export function createSecureMessageStore(platform, nativeStore) {
   function requireStore(method) {
     if (platform !== "android" || !nativeStore || typeof nativeStore[method] !== "function") {
@@ -39,14 +52,15 @@ export function createSecureMessageStore(platform, nativeStore) {
     },
     async getMessage(id) {
       requireNonEmptyString(id, "id");
-      return requireStore("getDecryptedMessage").getDecryptedMessage(id);
+      const result = await requireStore("getDecryptedMessage").getDecryptedMessage(id);
+      return result === null ? null : validateStoredMessage(result);
     },
     async getMessages() {
       const result = await requireStore("getAllDecryptedMessages").getAllDecryptedMessages();
       if (!Array.isArray(result)) {
         throw new TypeError("Native message store returned an invalid message list");
       }
-      return result;
+      return result.map(validateStoredMessage);
     },
     async deleteMessage(id) {
       requireNonEmptyString(id, "id");
