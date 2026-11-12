@@ -76,3 +76,8 @@ The message detail view can show a caution card when local keyword rules find si
 ## User feedback on warning hints
 
 On a flagged conversation, users can mark the warning as suspicious or as a possible false alarm. This choice is stored alongside that conversation in local AsyncStorage and can be undone. It is private device-side feedback only: it is not sent to Niva or used to train a model, and it does not change the keyword rules or automatically block a sender.
+
+
+## Privacy & data controls
+
+The app includes a local Privacy & Data screen that describes the prototype's storage behavior and integration limits, shows the current conversation count, and lets the user reset saved inbox state to the seeded sample conversations. Resetting affects only Niva's local prototype data; it does not delete SMS, email, or data held by other apps. AsyncStorage is not encrypted.
