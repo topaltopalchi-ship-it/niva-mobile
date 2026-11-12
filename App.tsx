@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getCategorySuggestion, getRiskHint, isStoredMessages } from "./messageRules";
+import type { Message } from "./messageRules";
 import {
   SafeAreaView,
   StatusBar,
@@ -13,19 +15,6 @@ import {
   Alert,
   Share,
 } from "react-native";
-
-type Message = {
-  id: string;
-  sender: string;
-  initials: string;
-  preview: string;
-  time: string;
-  category: "Personal" | "Updates" | "Promotions";
-  unread: boolean;
-  important: boolean;
-  blocked: boolean;
-  riskFeedback?: "suspicious" | "false-positive";
-};
 
 const INITIAL_MESSAGES: Message[] = [
   { id: "1", sender: "Maya Chen", initials: "MC", preview: "Are we still on for coffee tomorrow?", time: "9:41", category: "Personal", unread: true, important: true, blocked: false },
@@ -42,54 +31,7 @@ type Filter = "All" | "Important" | "Blocked" | "Personal" | "Updates" | "Promot
 const STORAGE_KEY = "@niva/conversations/v1";
 const DELETED_KEY = "@niva/data-deleted/v1";
 
-function getCategorySuggestion(message: Message): { category: Message["category"]; reason: string } | null {
-  const text = (message.sender + " " + message.preview).toLowerCase();
-  const promotionSignals = ["unsubscribe", "discount", "deal", "offer", "sale", "coupon", "promo"];
-  const updateSignals = ["statement", "verification code", "one-time code", "package", "delivery", "tracking", "appointment", "receipt"];
-  if (promotionSignals.some((signal) => text.includes(signal)) && message.category !== "Promotions") {
-    return { category: "Promotions", reason: "Contains promotional wording such as an offer or discount." };
-  }
-  if (updateSignals.some((signal) => text.includes(signal)) && message.category !== "Updates") {
-    return { category: "Updates", reason: "Contains a transactional or service-update term." };
-  }
-  return null;
-}
 
-function getRiskHint(message: Message): string[] {
-  const text = (message.sender + " " + message.preview).toLowerCase();
-  const reasons: string[] = [];
-  if (["act now", "immediately", "within 24 hours", "account suspended", "final warning"].some((signal) => text.includes(signal))) {
-    reasons.push("Uses urgent or threatening language to pressure a quick response.");
-  }
-  if (["password", "pin", "one-time code", "verification code", "bank details", "payment details"].some((signal) => text.includes(signal))) {
-    reasons.push("Mentions sensitive credentials or financial information.");
-  }
-  if (/https?:\/\//i.test(text) || /\b(bit\.ly|tinyurl\.com|t\.co)\b/i.test(text)) {
-    reasons.push("Contains a web link; check the destination independently before opening it.");
-  }
-  if (["you won", "claim your prize", "free gift"].some((signal) => text.includes(signal))) {
-    reasons.push("Uses prize or free-gift language that can be used in deceptive messages.");
-  }
-  return reasons;
-}
-
-function isStoredMessages(value: unknown): value is Message[] {
-  if (!Array.isArray(value)) return false;
-  return value.every((item) =>
-    item !== null &&
-    typeof item === "object" &&
-    typeof item.id === "string" &&
-    typeof item.sender === "string" &&
-    typeof item.initials === "string" &&
-    typeof item.preview === "string" &&
-    typeof item.time === "string" &&
-    ["Personal", "Updates", "Promotions"].includes(item.category) &&
-    typeof item.unread === "boolean" &&
-    typeof item.important === "boolean" &&
-    typeof item.blocked === "boolean" &&
-    (item.riskFeedback === undefined || item.riskFeedback === "suspicious" || item.riskFeedback === "false-positive")
-  );
-}
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
