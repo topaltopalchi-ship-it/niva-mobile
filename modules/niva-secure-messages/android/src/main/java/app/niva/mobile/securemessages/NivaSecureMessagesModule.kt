@@ -101,13 +101,23 @@ class NivaSecureMessagesModule : Module() {
     }
 
     Function("getStorageStatus") {
-      mapOf("available" to true, "encryption" to "AES-256-GCM", "keyProtection" to "Android Keystore")
+      val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+      val keyInitialized = keyStore.containsAlias(KEY_ALIAS)
+      mapOf(
+        "available" to true,
+        "encryption" to "AES-256-GCM",
+        "keyProtection" to "Android Keystore",
+        "keyInitialized" to keyInitialized,
+        "hasStoredMessages" to storageFile().exists()
+      )
     }
   }
 
   private fun storageFile(): File {
     val context = appContext.reactContext ?: error("React context unavailable")
-    return File(context.filesDir, FILE_NAME)
+    // noBackupFilesDir prevents encrypted records being restored without the
+    // device-bound Android Keystore key that protects them.
+    return File(context.noBackupFilesDir, FILE_NAME)
   }
 
   private fun secretKey(): SecretKey {
