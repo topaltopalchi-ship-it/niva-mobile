@@ -1,9 +1,24 @@
-import { NativeModules, Platform } from "react-native";
+import { requireNativeModule } from "expo-modules-core";
 import { createSecureMessageStore } from "./secureMessageStoreCore";
 
-const store = createSecureMessageStore(Platform.OS, NativeModules.NivaSecureMessages);
+let nativeStore;
+try {
+  nativeStore = requireNativeModule("NivaSecureMessages");
+} catch {
+  // The core boundary rejects all operations when the native module is absent.
+  nativeStore = undefined;
+}
 
-/** Native Android implementation must encrypt using an Android Keystore key. */
+const store = createSecureMessageStore("android", nativeStore);
+
+/** Android-only encrypted local storage; there is deliberately no JS fallback. */
 export const saveMessage = store.saveMessage;
 export const getMessage = store.getMessage;
 export const deleteMessage = store.deleteMessage;
+
+export function getSecureStorageStatus() {
+  if (!nativeStore || typeof nativeStore.getStorageStatus !== "function") {
+    return { available: false, reason: "native-module-missing" };
+  }
+  return nativeStore.getStorageStatus();
+}
