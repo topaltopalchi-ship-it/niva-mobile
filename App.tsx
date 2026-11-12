@@ -9,6 +9,7 @@ import {
   Pressable,
   View,
   FlatList,
+  ScrollView,
 } from "react-native";
 
 type Message = {
@@ -31,9 +32,26 @@ const INITIAL_MESSAGES: Message[] = [
   { id: "5", sender: "Studio Team", initials: "ST", preview: "The updated project files are in the folder.", time: "Mon", category: "Personal", unread: false, important: true, blocked: false },
 ];
 
-type Filter = "All" | "Important" | "Blocked";
+type Filter = "All" | "Important" | "Blocked" | "Personal" | "Updates" | "Promotions";
 
 const STORAGE_KEY = "@niva/conversations/v1";
+
+function isStoredMessages(value: unknown): value is Message[] {
+  if (!Array.isArray(value)) return false;
+  return value.every((item) =>
+    item !== null &&
+    typeof item === "object" &&
+    typeof item.id === "string" &&
+    typeof item.sender === "string" &&
+    typeof item.initials === "string" &&
+    typeof item.preview === "string" &&
+    typeof item.time === "string" &&
+    ["Personal", "Updates", "Promotions"].includes(item.category) &&
+    typeof item.unread === "boolean" &&
+    typeof item.important === "boolean" &&
+    typeof item.blocked === "boolean"
+  );
+}
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
@@ -49,7 +67,7 @@ export default function App() {
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved && active) {
           const parsed: unknown = JSON.parse(saved);
-          if (Array.isArray(parsed)) setMessages(parsed as Message[]);
+          if (isStoredMessages(parsed)) setMessages(parsed);
         }
       } catch {
         // Keep the sample inbox available if saved data is unavailable or invalid.
@@ -74,7 +92,8 @@ export default function App() {
     const matchesFilter =
       filter === "All" ? !message.blocked :
       filter === "Important" ? message.important && !message.blocked :
-      message.blocked;
+      filter === "Blocked" ? message.blocked :
+      message.category === filter && !message.blocked;
     const matchesQuery = (message.sender + " " + message.preview).toLowerCase().includes(query.toLowerCase());
     return matchesFilter && matchesQuery;
   }), [messages, filter, query]);
@@ -100,7 +119,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F7F4" />
+      <StatusBar barStyle="dark-content" />
       <View style={styles.container}>
         {selectedMessage ? (
           <View style={styles.detailScreen}>
@@ -156,14 +175,14 @@ export default function App() {
           />
         </View>
 
-        <View style={styles.filters}>
-          {(["All", "Important", "Blocked"] as Filter[]).map((item) => (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filters}>
+          {(["All", "Important", "Blocked", "Personal", "Updates", "Promotions"] as Filter[]).map((item) => (
             <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, filter === item && styles.filterActive]}>
               <Text style={[styles.filterText, filter === item && styles.filterTextActive]}>{item}</Text>
               {item === "Blocked" && <Text style={[styles.filterCount, filter === item && styles.filterTextActive]}>{messages.filter((m) => m.blocked).length}</Text>}
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>{filter === "All" ? "RECENT" : filter.toUpperCase()}</Text>
@@ -246,7 +265,8 @@ const styles = StyleSheet.create({
   searchBox: { height: 48, backgroundColor: "#FFFFFF", borderRadius: 14, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, borderWidth: 1, borderColor: "#E9EDE8" },
   searchIcon: { fontSize: 24, color: "#829087", marginRight: 9, marginTop: -3 },
   searchInput: { flex: 1, color: "#26352A", fontSize: 13, paddingVertical: 0 },
-  filters: { flexDirection: "row", marginTop: 22, marginBottom: 26, gap: 8 },
+  filterScroll: { flexGrow: 0, marginTop: 22, marginBottom: 26 },
+  filters: { flexDirection: "row", gap: 8, paddingRight: 4 },
   filter: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: "#EAEFE8" },
   filterActive: { backgroundColor: "#24382A" },
   filterText: { color: "#748075", fontSize: 11, fontWeight: "700" },
