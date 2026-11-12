@@ -22,6 +22,7 @@ type Message = {
   unread: boolean;
   important: boolean;
   blocked: boolean;
+  riskFeedback?: "suspicious" | "false-positive";
 };
 
 const INITIAL_MESSAGES: Message[] = [
@@ -82,7 +83,8 @@ function isStoredMessages(value: unknown): value is Message[] {
     ["Personal", "Updates", "Promotions"].includes(item.category) &&
     typeof item.unread === "boolean" &&
     typeof item.important === "boolean" &&
-    typeof item.blocked === "boolean"
+    typeof item.blocked === "boolean" &&
+    (item.riskFeedback === undefined || item.riskFeedback === "suspicious" || item.riskFeedback === "false-positive")
   );
 }
 
@@ -150,6 +152,12 @@ export default function App() {
     setSelectedId(id);
   };
 
+  const setRiskFeedback = (id: string, riskFeedback: Message["riskFeedback"]) => {
+    setMessages((current) => current.map((message) =>
+      message.id === id ? { ...message, riskFeedback } : message
+    ));
+  };
+
   const applyCategorySuggestion = (id: string, category: Message["category"]) => {
     setMessages((current) => current.map((message) =>
       message.id === id ? { ...message, category } : message
@@ -177,6 +185,17 @@ export default function App() {
             </View>
             {(() => {
               const riskReasons = getRiskHint(selectedMessage);
+              if (selectedMessage.riskFeedback === "false-positive") {
+                return (
+                  <View style={styles.feedbackCard}>
+                    <Text style={styles.feedbackTitle}>MARKED AS A POSSIBLE FALSE ALARM</Text>
+                    <Text style={styles.feedbackText}>Niva will keep this feedback on this device. The original warning rules are unchanged.</Text>
+                    <Pressable onPress={() => setRiskFeedback(selectedMessage.id, undefined)} style={styles.feedbackLink} accessibilityRole="button">
+                      <Text style={styles.feedbackLinkText}>Undo feedback</Text>
+                    </Pressable>
+                  </View>
+                );
+              }
               return riskReasons.length > 0 ? (
                 <View style={styles.riskCard}>
                   <Text style={styles.riskTitle}>REVIEW CAREFULLY · POTENTIAL WARNING SIGNS</Text>
@@ -184,6 +203,18 @@ export default function App() {
                     <Text key={reason} style={styles.riskReason}>• {reason}</Text>
                   ))}
                   <Text style={styles.riskDisclaimer}>This is a local keyword check, not a fraud verdict. Don’t share passwords or codes, and verify through an official channel you find yourself.</Text>
+                  {selectedMessage.riskFeedback === "suspicious" ? (
+                    <Text style={styles.feedbackText}>Marked by you as suspicious on this device.</Text>
+                  ) : (
+                    <View style={styles.feedbackActions}>
+                      <Pressable onPress={() => setRiskFeedback(selectedMessage.id, "suspicious")} style={styles.feedbackButton} accessibilityRole="button">
+                        <Text style={styles.feedbackButtonText}>Report suspicious</Text>
+                      </Pressable>
+                      <Pressable onPress={() => setRiskFeedback(selectedMessage.id, "false-positive")} style={styles.feedbackButtonSecondary} accessibilityRole="button">
+                        <Text style={styles.feedbackButtonSecondaryText}>False alarm</Text>
+                      </Pressable>
+                    </View>
+                  )}
                 </View>
               ) : null;
             })()}
@@ -313,6 +344,16 @@ const styles = StyleSheet.create({
   detailLabel: { color: "#879188", fontSize: 9, fontWeight: "800", letterSpacing: 1.4, marginBottom: 14 },
   detailBody: { color: "#344337", fontSize: 16, lineHeight: 25 },
   detailDisclaimer: { color: "#9AA49A", fontSize: 10, lineHeight: 15, marginTop: 22 },
+  feedbackCard: { marginTop: 14, padding: 15, borderRadius: 15, backgroundColor: "#EEF2EB", borderWidth: 1, borderColor: "#DDE7D8" },
+  feedbackTitle: { color: "#587452", fontSize: 9, fontWeight: "800", letterSpacing: 0.7 },
+  feedbackText: { color: "#6D786E", fontSize: 10, lineHeight: 15, marginTop: 8 },
+  feedbackLink: { alignSelf: "flex-start", marginTop: 8, paddingVertical: 4 },
+  feedbackLinkText: { color: "#587452", fontSize: 10, fontWeight: "800" },
+  feedbackActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 13 },
+  feedbackButton: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: "#EBD9C1" },
+  feedbackButtonText: { color: "#79562F", fontSize: 10, fontWeight: "800" },
+  feedbackButtonSecondary: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: "#E6EDE3" },
+  feedbackButtonSecondaryText: { color: "#587452", fontSize: 10, fontWeight: "800" },
   riskCard: { marginTop: 14, padding: 16, borderRadius: 15, backgroundColor: "#FFF6E9", borderWidth: 1, borderColor: "#EED9B8" },
   riskTitle: { color: "#94652B", fontSize: 9, fontWeight: "800", letterSpacing: 1 },
   riskReason: { color: "#765B3A", fontSize: 11, lineHeight: 17, marginTop: 8 },
