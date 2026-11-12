@@ -18,7 +18,7 @@ Status: product direction confirmed; engineering work must still pass the releas
 - The app currently displays seeded sample conversations and persists app state in AsyncStorage.
 - `src/native/sms/SmsBridge.ts` is only a fail-closed TypeScript contract.
 - There is no committed `android/` project because Expo prebuild generates it in CI.
-- A Kotlin `NivaSecureMessages` proof-of-concept module now provides AES-256-GCM encrypted file storage using a non-exportable Android Keystore key. It stores the encrypted envelope under `noBackupFilesDir`, so device backup cannot restore ciphertext without its device-bound key.
+- A Kotlin `NivaSecureMessages` proof-of-concept module now has local Expo package metadata and an Android library Gradle configuration. It provides AES-256-GCM encrypted file storage using a non-exportable Android Keystore key and stores the encrypted envelope under `noBackupFilesDir`, so device backup cannot restore ciphertext without its device-bound key.
 - The encrypted file bridge is not yet a production database: it rewrites one JSON payload, decrypts the full set for listing, and has not yet passed Android compilation or physical-device verification.
 - There is still no SMS receiver, SMS Provider integration, default-SMS role flow, or real send/receive implementation.
 - AsyncStorage is not encrypted and must not be used for real SMS bodies, sender addresses, or other sensitive message content.
