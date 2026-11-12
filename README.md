@@ -46,6 +46,10 @@ npm run ci
 
 The Node.js built-in test runner covers message categorization suggestions, warning signals, and validation of restored local data. GitHub Actions runs the TypeScript check and these tests on pushes and pull requests to `main`.
 
+## Android SMS integration
+
+The Android implementation must first qualify as a complete default SMS handler. Google Play restricts SMS permissions, and apps generally must be the active default SMS handler before requesting them. See [the implementation decision and staged plan](docs/android-sms-integration.md). No SMS access is implemented in the current prototype.
+
 ## Roadmap
 
 1. Product requirements and threat model
