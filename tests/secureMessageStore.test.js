@@ -45,3 +45,21 @@ test("read and delete require explicit native methods", async () => {
   assert.equal(await store.deleteMessage("m-1"), true);
   assert.deepEqual(calls, [["read", "m-1"], ["delete", "m-1"]]);
 });
+
+test("message listing is provided only by the encrypted native store", async () => {
+  const messages = [sample, { ...sample, id: "m-2" }];
+  const store = createSecureMessageStore("android", {
+    getAllDecryptedMessages: async () => messages,
+  });
+  assert.deepEqual(await store.getMessages(), messages);
+
+  const unavailableStore = createSecureMessageStore("android", {});
+  await assert.rejects(unavailableStore.getMessages(), { code: "NIVA_SECURE_STORE_UNAVAILABLE" });
+});
+
+test("message listing rejects malformed native results", async () => {
+  const store = createSecureMessageStore("android", {
+    getAllDecryptedMessages: async () => null,
+  });
+  await assert.rejects(store.getMessages(), TypeError);
+});
