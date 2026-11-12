@@ -94,6 +94,8 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [resetNotice, setResetNotice] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -243,6 +245,62 @@ export default function App() {
               </Pressable>
             </View>
           </View>
+        ) : privacyOpen ? (
+        ) : privacyOpen ? (
+          <View style={styles.privacyScreen}>
+            <Pressable onPress={() => { setPrivacyOpen(false); setResetNotice(""); }} style={styles.backButton} accessibilityRole="button">
+              <Text style={styles.backText}>‹  Back to inbox</Text>
+            </Pressable>
+            <Text style={styles.heading}>Privacy & data</Text>
+            <Text style={styles.subheading}>Understand what stays on this device.</Text>
+
+            <View style={styles.privacyCard}>
+              <Text style={styles.privacyCardTitle}>LOCAL DATA</Text>
+              <View style={styles.privacyStatRow}>
+                <Text style={styles.privacyStatLabel}>Conversations on this device</Text>
+                <Text style={styles.privacyStatValue}>{messages.length}</Text>
+              </View>
+              <View style={styles.privacyStatRow}>
+                <Text style={styles.privacyStatLabel}>Storage</Text>
+                <Text style={styles.privacyStatValue}>{storageReady ? "Available" : "Loading"}</Text>
+              </View>
+              <Text style={styles.privacyBody}>Niva stores conversation previews and your read, category, important, blocked-in-Niva, and warning-feedback choices in this app’s local storage.</Text>
+            </View>
+
+            <View style={styles.privacyCard}>
+              <Text style={styles.privacyCardTitle}>WHAT NIVA DOES NOT DO</Text>
+              <Text style={styles.privacyBullet}>• This prototype does not connect to SMS, email, contacts, or notifications.</Text>
+              <Text style={styles.privacyBullet}>• Message content and feedback are not sent to a Niva server.</Text>
+              <Text style={styles.privacyBullet}>• “Block in Niva” does not block at the device or carrier level.</Text>
+              <Text style={styles.privacyBullet}>• Local keyword hints are not a definitive fraud or spam check.</Text>
+            </View>
+
+            <View style={styles.privacyCard}>
+              <Text style={styles.privacyCardTitle}>STORAGE LIMITATION</Text>
+              <Text style={styles.privacyBody}>AsyncStorage is persistent but not encrypted by this app. Do not use this prototype for sensitive or confidential message content.</Text>
+            </View>
+
+            <View style={styles.privacyDangerCard}>
+              <Text style={styles.privacyDangerTitle}>RESET LOCAL INBOX</Text>
+              <Text style={styles.privacyBody}>Remove saved inbox changes and restore the original sample conversations. This does not affect messages on your phone or any external account.</Text>
+              <Pressable
+                onPress={() => {
+                  AsyncStorage.removeItem(STORAGE_KEY).then(() => {
+                    setMessages(INITIAL_MESSAGES);
+                    setSelectedId(null);
+                    setFilter("All");
+                    setQuery("");
+                    setResetNotice("Local inbox reset. Sample conversations are restored.");
+                  }).catch(() => setResetNotice("Could not clear local storage. Please try again."));
+                }}
+                style={styles.resetButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.resetButtonText}>Reset to sample inbox</Text>
+              </Pressable>
+              {resetNotice ? <Text style={styles.resetNotice}>{resetNotice}</Text> : null}
+            </View>
+          </View>
         ) : (
         <>
         <View style={styles.topBar}>
@@ -250,7 +308,12 @@ export default function App() {
             <Text style={styles.wordmark}>niva<Text style={styles.wordmarkDot}>.</Text></Text>
             <Text style={styles.eyebrow}>YOUR SPACE, YOUR RULES</Text>
           </View>
-          <View style={styles.avatar}><Text style={styles.avatarText}>J</Text></View>
+          <View style={styles.topBarActions}>
+            <Pressable onPress={() => setPrivacyOpen(true)} style={styles.settingsButton} accessibilityRole="button" accessibilityLabel="Open privacy and data settings">
+              <Text style={styles.settingsIcon}>⚙</Text>
+            </Pressable>
+            <View style={styles.avatar}><Text style={styles.avatarText}>J</Text></View>
+          </View>
         </View>
 
         <View style={styles.headingRow}>
@@ -332,6 +395,22 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F7F4" },
+  privacyScreen: { flex: 1, paddingTop: 10, gap: 13 },
+  topBarActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  settingsButton: { width: 38, height: 38, borderRadius: 13, backgroundColor: "#EAEFE8", alignItems: "center", justifyContent: "center" },
+  settingsIcon: { color: "#526B50", fontSize: 18 },
+  privacyCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E9EDE8", padding: 16, gap: 9 },
+  privacyCardTitle: { color: "#879188", fontSize: 9, fontWeight: "800", letterSpacing: 1.3, marginBottom: 2 },
+  privacyStatRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  privacyStatLabel: { color: "#59645B", fontSize: 11 },
+  privacyStatValue: { color: "#344337", fontSize: 11, fontWeight: "800" },
+  privacyBody: { color: "#778278", fontSize: 10, lineHeight: 16 },
+  privacyBullet: { color: "#59675C", fontSize: 10, lineHeight: 16 },
+  privacyDangerCard: { backgroundColor: "#FFF7F1", borderRadius: 16, borderWidth: 1, borderColor: "#F0DFD2", padding: 16, gap: 9 },
+  privacyDangerTitle: { color: "#9B6449", fontSize: 9, fontWeight: "800", letterSpacing: 1.2 },
+  resetButton: { alignSelf: "flex-start", backgroundColor: "#F0DFD2", borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 3 },
+  resetButtonText: { color: "#88563D", fontSize: 10, fontWeight: "800" },
+  resetNotice: { color: "#587452", fontSize: 10, lineHeight: 15 },
   detailScreen: { flex: 1, paddingTop: 10 },
   backButton: { alignSelf: "flex-start", paddingVertical: 10, paddingRight: 16 },
   backText: { color: "#587452", fontSize: 13, fontWeight: "700" },
