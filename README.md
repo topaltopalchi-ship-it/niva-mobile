@@ -80,4 +80,4 @@ On a flagged conversation, users can mark the warning as suspicious or as a poss
 
 ## Privacy & data controls
 
-The app includes a local Privacy & Data screen that describes the prototype's storage behavior and integration limits, shows the current conversation count, and lets the user reset saved inbox state to the seeded sample conversations. Resetting affects only Niva's local prototype data; it does not delete SMS, email, or data held by other apps. AsyncStorage is not encrypted.
+The app includes a local Privacy & Data screen that describes the prototype\’s storage behavior and integration limits, shows the current conversation count, and supports JSON export through the native share sheet. Users can reset the inbox to sample conversations or permanently delete Niva’s locally stored conversations and preferences after a confirmation prompt. A deletion marker prevents sample data from being silently restored on the next launch. These controls affect only Niva’s prototype data; they cannot delete SMS, email, or data held by other apps. AsyncStorage is not encrypted. Exported JSON may contain message content, so choose a trusted share destination.
