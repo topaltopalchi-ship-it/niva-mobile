@@ -17,6 +17,7 @@ const store = createSecureMessageStore(Platform.OS, nativeStore);
 /** Android-only encrypted local storage; there is deliberately no JS fallback. */
 export const saveMessage = store.saveMessage;
 export const getMessage = store.getMessage;
+export const getMessages = store.getMessages;
 export const deleteMessage = store.deleteMessage;
 
 export function getSecureStorageStatus() {
