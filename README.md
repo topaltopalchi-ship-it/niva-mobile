@@ -91,3 +91,10 @@ The app includes a local Privacy & Data screen that describes the prototype\’s
 ## Android SMS bridge status
 
 A fail-closed TypeScript boundary now lives at `src/native/sms/SmsBridge.ts`. It reports unsupported platforms or a missing native module and never treats bridge errors as permission. This is scaffolding only: there is still no Android native SMS implementation, no SMS permission request, and no real-message import. See [Android SMS release gates](docs/android-sms-release-gates.md) before implementing or advertising device SMS support.
+
+
+## Encrypted Android message-store milestone
+
+A local Expo Android module now exists at `modules/niva-secure-messages`. It stores message records in an AES-256-GCM encrypted file and keeps the encryption key in Android Keystore. The JavaScript API at `src/storage/secureMessageStore.js` fails closed when the native module is missing; it has no AsyncStorage or plaintext fallback.
+
+This is an initial native storage implementation, not a completed SMS product. The module has not yet been compiled or exercised on an Android device in this repository workflow. The default-SMS role, complete SMS/MMS manifest components, provider synchronization, incoming/outgoing message flows, and Play policy review are still outstanding. Do not use the prototype AsyncStorage conversation store for real SMS content.
