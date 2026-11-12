@@ -87,3 +87,7 @@ On a flagged conversation, users can mark the warning as suspicious or as a poss
 ## Privacy & data controls
 
 The app includes a local Privacy & Data screen that describes the prototype\’s storage behavior and integration limits, shows the current conversation count, and supports JSON export through the native share sheet. Users can reset the inbox to sample conversations or permanently delete Niva’s locally stored conversations and preferences after a confirmation prompt. A deletion marker prevents sample data from being silently restored on the next launch. These controls affect only Niva’s prototype data; they cannot delete SMS, email, or data held by other apps. AsyncStorage is not encrypted. Exported JSON may contain message content, so choose a trusted share destination.
+
+## Android SMS bridge status
+
+A fail-closed TypeScript boundary now lives at `src/native/sms/SmsBridge.ts`. It reports unsupported platforms or a missing native module and never treats bridge errors as permission. This is scaffolding only: there is still no Android native SMS implementation, no SMS permission request, and no real-message import. See [Android SMS release gates](docs/android-sms-release-gates.md) before implementing or advertising device SMS support.
