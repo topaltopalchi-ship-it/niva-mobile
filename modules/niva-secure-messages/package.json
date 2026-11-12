@@ -1,0 +1,12 @@
+{
+  "name": "niva-secure-messages",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "description": "Android-only encrypted local message storage module for Niva",
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}
