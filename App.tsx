@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   SafeAreaView,
   StatusBar,
@@ -32,10 +33,42 @@ const INITIAL_MESSAGES: Message[] = [
 
 type Filter = "All" | "Important" | "Blocked";
 
+const STORAGE_KEY = "@niva/conversations/v1";
+
 export default function App() {
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [filter, setFilter] = useState<Filter>("All");
   const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const restore = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (saved && active) {
+          const parsed: unknown = JSON.parse(saved);
+          if (Array.isArray(parsed)) setMessages(parsed as Message[]);
+        }
+      } catch {
+        // Keep the sample inbox available if saved data is unavailable or invalid.
+      } finally {
+        if (active) setStorageReady(true);
+      }
+    };
+    void restore();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) return;
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(messages)).catch(() => {
+      // The app remains usable if device storage is temporarily unavailable.
+    });
+  }, [messages, storageReady]);
+
+  const selectedMessage = messages.find((message) => message.id === selectedId) ?? null;
 
   const visibleMessages = useMemo(() => messages.filter((message) => {
     const matchesFilter =
@@ -60,10 +93,41 @@ export default function App() {
     current.map((message) => message.id === id ? { ...message, unread: false } : message)
   );
 
+  const openConversation = (id: string) => {
+    markRead(id);
+    setSelectedId(id);
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5F7F4" />
       <View style={styles.container}>
+        {selectedMessage ? (
+          <View style={styles.detailScreen}>
+            <Pressable onPress={() => setSelectedId(null)} style={styles.backButton} accessibilityRole="button">
+              <Text style={styles.backText}>‹  Back to inbox</Text>
+            </Pressable>
+            <View style={styles.detailHeader}>
+              <View style={styles.detailAvatar}><Text style={styles.detailInitials}>{selectedMessage.initials}</Text></View>
+              <Text style={styles.detailSender}>{selectedMessage.sender}</Text>
+              <Text style={styles.detailMeta}>{selectedMessage.category} · {selectedMessage.time}</Text>
+            </View>
+            <View style={styles.detailCard}>
+              <Text style={styles.detailLabel}>MESSAGE PREVIEW</Text>
+              <Text style={styles.detailBody}>{selectedMessage.preview}</Text>
+              <Text style={styles.detailDisclaimer}>This is sample conversation content. Niva is not connected to your device messages yet.</Text>
+            </View>
+            <View style={styles.detailActions}>
+              <Pressable onPress={() => toggleImportant(selectedMessage.id)} style={styles.detailAction}>
+                <Text style={styles.detailActionText}>{selectedMessage.important ? "★  Important" : "☆  Mark important"}</Text>
+              </Pressable>
+              <Pressable onPress={() => toggleBlocked(selectedMessage.id)} style={styles.detailAction}>
+                <Text style={styles.detailActionText}>{selectedMessage.blocked ? "↗  Unblock sender" : "⊖  Block in Niva"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+        <>
         <View style={styles.topBar}>
           <View>
             <Text style={styles.wordmark}>niva<Text style={styles.wordmarkDot}>.</Text></Text>
@@ -112,7 +176,7 @@ export default function App() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>Nothing here yet</Text><Text style={styles.emptyText}>Messages matching this view will appear here.</Text></View>}
           renderItem={({ item }) => (
-            <Pressable onPress={() => markRead(item.id)} style={[styles.messageCard, item.unread && styles.messageUnread]}>
+            <Pressable onPress={() => openConversation(item.id)} style={[styles.messageCard, item.unread && styles.messageUnread]}>
               <View style={[styles.contactAvatar, item.category === "Promotions" && styles.promoAvatar, item.category === "Updates" && styles.updateAvatar]}>
                 <Text style={styles.contactInitials}>{item.initials}</Text>
               </View>
@@ -143,6 +207,7 @@ export default function App() {
           <Text style={styles.bottomIcon}>✳</Text>
           <Text style={styles.bottomText}>A calmer inbox starts with what matters.</Text>
         </View>
+        </>)}
       </View>
     </SafeAreaView>
   );
@@ -150,6 +215,21 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F7F4" },
+  detailScreen: { flex: 1, paddingTop: 10 },
+  backButton: { alignSelf: "flex-start", paddingVertical: 10, paddingRight: 16 },
+  backText: { color: "#587452", fontSize: 13, fontWeight: "700" },
+  detailHeader: { alignItems: "center", paddingVertical: 38 },
+  detailAvatar: { width: 64, height: 64, borderRadius: 22, backgroundColor: "#E3EADF", alignItems: "center", justifyContent: "center", marginBottom: 14 },
+  detailInitials: { color: "#526B50", fontSize: 17, fontWeight: "800" },
+  detailSender: { color: "#1C2A21", fontSize: 23, fontWeight: "700" },
+  detailMeta: { color: "#89928B", fontSize: 11, marginTop: 7 },
+  detailCard: { backgroundColor: "#FFFFFF", borderRadius: 18, borderWidth: 1, borderColor: "#E9EDE8", padding: 20 },
+  detailLabel: { color: "#879188", fontSize: 9, fontWeight: "800", letterSpacing: 1.4, marginBottom: 14 },
+  detailBody: { color: "#344337", fontSize: 16, lineHeight: 25 },
+  detailDisclaimer: { color: "#9AA49A", fontSize: 10, lineHeight: 15, marginTop: 22 },
+  detailActions: { marginTop: 16, gap: 10 },
+  detailAction: { backgroundColor: "#EAEFE8", borderRadius: 13, padding: 15 },
+  detailActionText: { color: "#526B50", fontSize: 12, fontWeight: "700" },
   container: { flex: 1, paddingHorizontal: 22, paddingTop: 12 },
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 34 },
   wordmark: { color: "#17251D", fontSize: 31, fontWeight: "800", letterSpacing: -1.8 },
