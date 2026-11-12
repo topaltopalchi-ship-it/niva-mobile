@@ -1,12 +1,14 @@
 package app.niva.mobile.securemessages
 
 import android.security.keystore.KeyGenParameterSpec
+import android.system.Os
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -129,8 +131,12 @@ class NivaSecureMessagesModule : Module() {
       .put("ciphertext", Base64.encodeToString(ciphertext, Base64.NO_WRAP))
     val file = storageFile()
     val temporary = File(file.parentFile, "$FILE_NAME.tmp")
-    temporary.writeText(envelope.toString(), Charsets.UTF_8)
-    if (file.exists() && !file.delete()) error("Could not replace encrypted message database")
-    if (!temporary.renameTo(file)) error("Could not commit encrypted message database")
+    FileOutputStream(temporary).use { output ->
+      output.write(envelope.toString().toByteArray(Charsets.UTF_8))
+      output.fd.sync()
+    }
+    // Atomic same-filesystem replacement preserves the previous valid file
+    // if writing the next encrypted database is interrupted.
+    Os.rename(temporary.absolutePath, file.absolutePath)
   }
 }
