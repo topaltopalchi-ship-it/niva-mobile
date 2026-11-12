@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'app.niva.mobile.securemessages'
+version = '0.1.0'
+
+android {
+  namespace "app.niva.mobile.securemessages"
+
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+
+  lintOptions {
+    abortOnError false
+  }
+}
