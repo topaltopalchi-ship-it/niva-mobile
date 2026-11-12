@@ -122,8 +122,8 @@ export default function App() {
       <StatusBar barStyle="dark-content" />
       <View style={styles.container}>
         {selectedMessage ? (
-          <View style={styles.detailScreen}>
-            <Pressable onPress={() => setSelectedId(null)} style={styles.backButton} accessibilityRole="button">
+          <ScrollView style={styles.detailScreen} contentContainerStyle={styles.detailContent} keyboardShouldPersistTaps="handled">
+            <Pressable onPress={() => setSelectedId(null)} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Back to inbox">
               <Text style={styles.backText}>‹  Back to inbox</Text>
             </Pressable>
             <View style={styles.detailHeader}>
@@ -188,16 +188,16 @@ export default function App() {
               ) : null;
             })()}
             <View style={styles.detailActions}>
-              <Pressable onPress={() => toggleImportant(selectedMessage.id)} style={styles.detailAction}>
+              <Pressable onPress={() => toggleImportant(selectedMessage.id)} style={styles.detailAction} accessibilityRole="button">
                 <Text style={styles.detailActionText}>{selectedMessage.important ? "★  Important" : "☆  Mark important"}</Text>
               </Pressable>
               <Pressable onPress={() => toggleBlocked(selectedMessage.id)} style={styles.detailAction}>
                 <Text style={styles.detailActionText}>{selectedMessage.blocked ? "↗  Unblock sender" : "⊖  Block in Niva"}</Text>
               </Pressable>
             </View>
-          </View>
+          </ScrollView>
         ) : privacyOpen ? (
-          <View style={styles.privacyScreen}>
+          <ScrollView style={styles.privacyScreen} contentContainerStyle={styles.privacyContent}>
             <Pressable onPress={() => { setPrivacyOpen(false); setResetNotice(""); }} style={styles.backButton} accessibilityRole="button">
               <Text style={styles.backText}>‹  Back to inbox</Text>
             </Pressable>
@@ -297,7 +297,7 @@ export default function App() {
                 <Text style={styles.deleteButtonText}>Delete all local data</Text>
               </Pressable>
             </View>
-          </View>
+          </ScrollView>
         ) : (
         <>
         <View style={styles.topBar}>
@@ -353,7 +353,7 @@ export default function App() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>Nothing here yet</Text><Text style={styles.emptyText}>Messages matching this view will appear here.</Text></View>}
           renderItem={({ item }) => (
-            <Pressable onPress={() => openConversation(item.id)} style={[styles.messageCard, item.unread && styles.messageUnread]}>
+            <Pressable onPress={() => openConversation(item.id)} style={[styles.messageCard, item.unread && styles.messageUnread]} accessibilityRole="button" accessibilityLabel={`${item.sender}. ${item.preview}. ${item.category}. ${item.unread ? "Unread" : "Read"}`} accessibilityHint="Opens conversation details">
               <View style={[styles.contactAvatar, item.category === "Promotions" && styles.promoAvatar, item.category === "Updates" && styles.updateAvatar]}>
                 <Text style={styles.contactInitials}>{item.initials}</Text>
               </View>
@@ -392,7 +392,8 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F7F4" },
-  privacyScreen: { flex: 1, paddingTop: 10, gap: 13 },
+  privacyScreen: { flex: 1 },
+  privacyContent: { paddingTop: 10, paddingBottom: 28, gap: 13 },
   topBarActions: { flexDirection: "row", alignItems: "center", gap: 12 },
   settingsButton: { width: 38, height: 38, borderRadius: 13, backgroundColor: "#EAEFE8", alignItems: "center", justifyContent: "center" },
   settingsIcon: { color: "#526B50", fontSize: 18 },
@@ -412,7 +413,8 @@ const styles = StyleSheet.create({
   resetButton: { alignSelf: "flex-start", backgroundColor: "#F0DFD2", borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 3 },
   resetButtonText: { color: "#88563D", fontSize: 10, fontWeight: "800" },
   resetNotice: { color: "#587452", fontSize: 10, lineHeight: 15 },
-  detailScreen: { flex: 1, paddingTop: 10 },
+  detailScreen: { flex: 1 },
+  detailContent: { paddingTop: 10, paddingBottom: 28 },
   backButton: { alignSelf: "flex-start", paddingVertical: 10, paddingRight: 16 },
   backText: { color: "#587452", fontSize: 13, fontWeight: "700" },
   detailHeader: { alignItems: "center", paddingVertical: 38 },
