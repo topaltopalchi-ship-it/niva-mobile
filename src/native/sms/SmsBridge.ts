@@ -1,11 +1,9 @@
 import { NativeModules, Platform } from "react-native";
+import { normalizeSmsCapability } from "./smsCapability";
 
 /**
  * Typed boundary for the future Android default-SMS-handler module.
- *
- * The native implementation is intentionally not bundled yet. Until the
- * Android RoleManager flow, SMS intents, provider access, and Play policy
- * requirements are implemented and tested, this bridge reports unavailable.
+ * No SMS access is available until the native implementation is installed.
  */
 export type SmsCapability =
   | { status: "unsupported-platform" }
@@ -14,7 +12,7 @@ export type SmsCapability =
   | { status: "default-handler"; canRead: boolean; canSend: boolean };
 
 type NativeSmsModule = {
-  getCapability(): Promise<Exclude<SmsCapability, { status: "unsupported-platform" | "native-module-missing" }>>;
+  getCapability(): Promise<unknown>;
   requestDefaultHandler(): Promise<boolean>;
 };
 
@@ -24,21 +22,21 @@ export async function getSmsCapability(): Promise<SmsCapability> {
   if (Platform.OS !== "android") return { status: "unsupported-platform" };
   if (!nativeSms) return { status: "native-module-missing" };
   try {
-    return await nativeSms.getCapability();
+    // Validate native payloads at runtime; malformed responses fail closed.
+    return normalizeSmsCapability(await nativeSms.getCapability()) as SmsCapability;
   } catch {
-    // Fail closed: a bridge error must never be interpreted as permission.
     return { status: "not-default-handler" };
   }
 }
 
 /**
- * Opens the Android system role request through the native module.
- * Returns false when the module is unavailable or the platform is unsupported.
+ * Requests the system default-SMS role. A true result only means the native
+ * request reports acceptance; callers must re-check getSmsCapability().
  */
 export async function requestDefaultSmsHandler(): Promise<boolean> {
   if (Platform.OS !== "android" || !nativeSms) return false;
   try {
-    return await nativeSms.requestDefaultHandler();
+    return (await nativeSms.requestDefaultHandler()) === true;
   } catch {
     return false;
   }
