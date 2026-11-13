@@ -1,11 +1,13 @@
 const UNAVAILABLE = Object.freeze({ status: "not-default-handler" });
 
+const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
+
 /**
  * Normalize the native Android module response.
  * Unknown/malformed payloads fail closed and never grant SMS capabilities.
  */
 export function normalizeSmsCapability(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || !hasOwn(value, "status")) {
     return { ...UNAVAILABLE };
   }
 
@@ -19,8 +21,8 @@ export function normalizeSmsCapability(value) {
 
   return {
     status: "default-handler",
-    canRead: value.canRead === true,
-    canSend: value.canSend === true,
+    canRead: hasOwn(value, "canRead") && value.canRead === true,
+    canSend: hasOwn(value, "canSend") && value.canSend === true,
   };
 }
 
