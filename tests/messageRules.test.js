@@ -40,6 +40,13 @@ test("ordinary text produces no risk hint", () => {
   assert.deepEqual(getRiskHint(message({ preview: "See you at the station at six." })), []);
 });
 
+test("malformed message inputs do not crash rule helpers", () => {
+  assert.equal(getCategorySuggestion(null), null);
+  assert.equal(getCategorySuggestion("discount"), null);
+  assert.deepEqual(getRiskHint(null), []);
+  assert.deepEqual(getRiskHint({ sender: 42, preview: null }), []);
+});
+
 test("stored messages validation accepts valid records and rejects malformed records", () => {
   assert.equal(isStoredMessages([message()]), true);
   assert.equal(isStoredMessages([]), true);
@@ -47,4 +54,11 @@ test("stored messages validation accepts valid records and rejects malformed rec
   assert.equal(isStoredMessages([message({ unread: "false" })]), false);
   assert.equal(isStoredMessages([message({ category: "Unknown" })]), false);
   assert.equal(isStoredMessages([message({ riskFeedback: "approved" })]), false);
+});
+
+test("stored messages validation rejects sparse arrays and array-shaped records", () => {
+  const sparse = [];
+  sparse.length = 1;
+  assert.equal(isStoredMessages(sparse), false);
+  assert.equal(isStoredMessages([[message()]]), false);
 });
