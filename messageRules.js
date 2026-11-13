@@ -4,11 +4,17 @@ const URGENCY_SIGNALS = ["act now", "immediately", "within 24 hours", "account s
 const SENSITIVE_SIGNALS = ["password", "pin", "one-time code", "verification code", "bank details", "payment details"];
 const PRIZE_SIGNALS = ["you won", "claim your prize", "free gift"];
 
+const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
+
 function messageText(message) {
-  return (message.sender + " " + message.preview).toLowerCase();
+  if (!message || typeof message !== "object" || Array.isArray(message)) return "";
+  const sender = typeof message.sender === "string" ? message.sender : "";
+  const preview = typeof message.preview === "string" ? message.preview : "";
+  return (sender + " " + preview).toLowerCase();
 }
 
 function getCategorySuggestion(message) {
+  if (!message || typeof message !== "object" || Array.isArray(message)) return null;
   const text = messageText(message);
   if (PROMOTION_SIGNALS.some((signal) => text.includes(signal)) && message.category !== "Promotions") {
     return { category: "Promotions", reason: "Contains promotional wording such as an offer or discount." };
@@ -39,20 +45,29 @@ function getRiskHint(message) {
 
 function isStoredMessages(value) {
   if (!Array.isArray(value)) return false;
-  return value.every((item) =>
-    item !== null &&
-    typeof item === "object" &&
-    typeof item.id === "string" &&
-    typeof item.sender === "string" &&
-    typeof item.initials === "string" &&
-    typeof item.preview === "string" &&
-    typeof item.time === "string" &&
-    ["Personal", "Updates", "Promotions"].includes(item.category) &&
-    typeof item.unread === "boolean" &&
-    typeof item.important === "boolean" &&
-    typeof item.blocked === "boolean" &&
-    (item.riskFeedback === undefined || item.riskFeedback === "suspicious" || item.riskFeedback === "false-positive")
-  );
+
+  // Array.prototype.every skips sparse slots; validate each index explicitly.
+  for (let index = 0; index < value.length; index += 1) {
+    if (!hasOwn(value, index)) return false;
+    const item = value[index];
+    if (
+      item === null ||
+      typeof item !== "object" ||
+      Array.isArray(item) ||
+      typeof item.id !== "string" ||
+      typeof item.sender !== "string" ||
+      typeof item.initials !== "string" ||
+      typeof item.preview !== "string" ||
+      typeof item.time !== "string" ||
+      !["Personal", "Updates", "Promotions"].includes(item.category) ||
+      typeof item.unread !== "boolean" ||
+      typeof item.important !== "boolean" ||
+      typeof item.blocked !== "boolean" ||
+      (item.riskFeedback !== undefined && item.riskFeedback !== "suspicious" && item.riskFeedback !== "false-positive")
+    ) return false;
+  }
+
+  return true;
 }
 
 module.exports = { getCategorySuggestion, getRiskHint, isStoredMessages };
