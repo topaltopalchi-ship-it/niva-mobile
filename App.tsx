@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCategorySuggestion, getRiskHint, isStoredMessages } from "./messageRules";
-import type { Message } from "./messageRules";
 import {
   SafeAreaView,
   StatusBar,
@@ -15,6 +14,19 @@ import {
   Alert,
   Share,
 } from "react-native";
+
+type Message = {
+  id: string;
+  sender: string;
+  initials: string;
+  preview: string;
+  time: string;
+  category: "Personal" | "Updates" | "Promotions";
+  unread: boolean;
+  important: boolean;
+  blocked: boolean;
+  riskFeedback?: "suspicious" | "false-positive";
+};
 
 const INITIAL_MESSAGES: Message[] = [
   { id: "1", sender: "Maya Chen", initials: "MC", preview: "Are we still on for coffee tomorrow?", time: "9:41", category: "Personal", unread: true, important: true, blocked: false },
@@ -287,7 +299,20 @@ export default function App() {
                           setQuery("");
                           setResetNotice("All Niva data stored by this prototype has been deleted from local storage.");
                         })
-                        .catch(() => setResetNotice("Could not fully delete local data. Please try again."));
+                        .catch(async () => {
+                          const deletionMarker = await AsyncStorage.getItem(DELETED_KEY).catch(() => null);
+                          if (deletionMarker === "true") {
+                            // Keep the inbox empty after restart, but do not claim stored bytes were removed.
+                            setMessages([]);
+                            setSelectedId(null);
+                            setFilter("All");
+                            setQuery("");
+                            setResetNotice("Niva is hiding the old inbox, but storage could not confirm full deletion. Please retry deletion.");
+                          } else {
+                            setDataDeleted(false);
+                            setResetNotice("Could not start deletion because the deletion marker could not be saved. Your local inbox was not cleared.");
+                          }
+                        });
                     } },
                   ]
                 )}
