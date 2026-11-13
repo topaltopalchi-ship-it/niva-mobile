@@ -299,7 +299,20 @@ export default function App() {
                           setQuery("");
                           setResetNotice("All Niva data stored by this prototype has been deleted from local storage.");
                         })
-                        .catch(() => setResetNotice("Could not fully delete local data. Please try again."));
+                        .catch(async () => {
+                          const deletionMarker = await AsyncStorage.getItem(DELETED_KEY).catch(() => null);
+                          if (deletionMarker === "true") {
+                            // Keep the inbox empty after restart, but do not claim stored bytes were removed.
+                            setMessages([]);
+                            setSelectedId(null);
+                            setFilter("All");
+                            setQuery("");
+                            setResetNotice("Niva is hiding the old inbox, but storage could not confirm full deletion. Please retry deletion.");
+                          } else {
+                            setDataDeleted(false);
+                            setResetNotice("Could not start deletion because the deletion marker could not be saved. Your local inbox was not cleared.");
+                          }
+                        });
                     } },
                   ]
                 )}
