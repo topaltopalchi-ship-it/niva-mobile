@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCategorySuggestion, getRiskHint, isStoredMessages } from "./messageRules";
-import type { Message } from "./messageRules";
 import {
   SafeAreaView,
   StatusBar,
@@ -15,6 +14,19 @@ import {
   Alert,
   Share,
 } from "react-native";
+
+type Message = {
+  id: string;
+  sender: string;
+  initials: string;
+  preview: string;
+  time: string;
+  category: "Personal" | "Updates" | "Promotions";
+  unread: boolean;
+  important: boolean;
+  blocked: boolean;
+  riskFeedback?: "suspicious" | "false-positive";
+};
 
 const INITIAL_MESSAGES: Message[] = [
   { id: "1", sender: "Maya Chen", initials: "MC", preview: "Are we still on for coffee tomorrow?", time: "9:41", category: "Personal", unread: true, important: true, blocked: false },
